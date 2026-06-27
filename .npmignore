@@ -1,0 +1,25 @@
+# Git
+.git
+.gitignore
+
+# Claude Code internal
+.claude
+.skills-manager
+.skills-manager.lock
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.log
+
+# Node modules
+node_modules
+
+# Test files
+test
+tests
+*.test.js
+*.spec.js
