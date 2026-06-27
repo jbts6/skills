@@ -2,6 +2,7 @@
 name: godot-rag
 description: Use when writing, debugging, or researching any Godot Engine code (GDScript, C#, shaders, scene setup). Must run before generating or discussing Godot implementation details.
 compatibility: Requires Python 3.9+ and godot-rag (pip install godot-rag). Docs cover Godot 4.x (stable).
+version: 4.7.0.post5+
 ---
 
 # godot-rag: Official Docs Before Code
@@ -19,14 +20,14 @@ No exceptions. Not for "simple" code. Not for "I already know this." Not for "ju
 Before your first query in any session, run:
 
 ```bash
-godot-rag search "test" --limit 1
+godot-rag s "test" --limit 1
 ```
 
 **If `command not found`:**
 ```bash
 pip install godot-rag
 # then retry
-godot-rag search "test" --limit 1
+godot-rag s "test" --limit 1
 ```
 
 **If pip install fails** (externally managed Python, no venv, etc.):
@@ -35,20 +36,77 @@ godot-rag search "test" --limit 1
 python3 -m venv ~/.venvs/godot-rag
 ~/.venvs/godot-rag/bin/pip install godot-rag
 # Then use full path:
-~/.venvs/godot-rag/bin/godot-rag search "test" --limit 1
+~/.venvs/godot-rag/bin/godot-rag s "test" --limit 1
 ```
 
 **If still failing after install attempts:** Tell the user godot-rag is unavailable and proceed with caution — state explicitly that your answers may be version-inaccurate.
 
 ## How to Query
 
+### Search by Type (Recommended)
+
+Use specific search commands for precise results:
+
 ```bash
-godot-rag search "your search query" --limit 5
+# Search class reference (API docs only)
+godot-rag s-class "Node.add_child"
+godot-rag s-class "Signal.emit" --limit 3
+
+# Search tutorials (tutorials + getting started guides)
+godot-rag s-tutorial "how to use signals"
+godot-rag s-tutorial "2D pathfinding" --limit 5
+
+# Search engine details (architecture, file formats, GDExtension, etc.)
+godot-rag s-engine "GDExtension"
+godot-rag s-engine "IDE debugging" --limit 3
+
+# Search addon docs and examples
+godot-rag s-addon "state machine"
+godot-rag s-addon "state machine" --addon statecharts
+godot-rag s-addon "dialogue" --limit 3
+
+# Search all docs (no type filter)
+godot-rag s "Timer"
 ```
 
-**For machine-readable output (preferred when parsing results):**
+### Search Addons
+
 ```bash
-godot-rag search "your search query" --json --limit 5
+# Search all addon docs, examples, and API summaries
+godot-rag s-addon "state machine"
+godot-rag s-addon "dialogue balloon"
+godot-rag s-addon "scene transition"
+
+# Filter by specific addon
+godot-rag s-addon "state" --addon statecharts
+godot-rag s-addon "change_scene" --addon scene_manager
+godot-rag s-addon "test" --addon gdUnit4
+
+# Find API symbols
+godot-rag s-addon "SceneManager" --addon scene_manager
+godot-rag s-addon "change_scene" --addon scene_manager
+godot-rag s-addon "scene_loaded" --addon scene_manager
+godot-rag s-addon "BehaviorTree" --addon limboai
+godot-rag s-addon "DialogueManager" --addon dialogue_manager
+
+# Search example code
+godot-rag s-addon "ninja_frog" --addon statecharts
+godot-rag s-addon "verify_node_path" --addon doctor
+
+# JSON output for AI agents
+godot-rag s-addon "state machine" --addon statecharts --json
+godot-rag s-addon "change_scene" --json
+```
+
+### Output Format
+
+```bash
+# JSON output (for AI Agent)
+godot-rag s-class "Vector3.normalized" --json
+godot-rag s-addon "change_scene" --addon scene_manager --json
+
+# Limit results
+godot-rag s-tutorial "C# Variant" --limit 3
 ```
 
 ## Query Strategy
@@ -62,6 +120,7 @@ godot-rag search "your search query" --json --limit 5
 | Know the concept | `"2D pathfinding"` | `"NavigationAgent"` |
 | Know the error | `"invalid call nonexistent function"` | the class name involved |
 | Only know the problem | `"spawn enemies timer"` | `"Timer"` then `"PackedScene"` |
+| Need addon docs | `"state machine" --addon statecharts` | `"state machine"` (all addons) |
 
 **Multiple queries are fine.** One query rarely covers everything. Query the class, then query the specific method/property you need.
 
@@ -74,7 +133,7 @@ godot-rag search "your search query" --json --limit 5
 
 Each result has:
 - `score` — higher = more relevant (100 = exact symbol match)
-- `chunk_type` — `class_summary`, `method`, `property`, `signal`, `enum`, `constant`, `tutorial_section`
+- `chunk_type` — `class_summary`, `method`, `property`, `signal`, `enum`, `constant`, `tutorial_section`, `addon_doc`, `addon_example`, `addon_api`
 - `symbol` — the API symbol (e.g. `Timer.start`)
 - `text` — the actual documentation content
 
@@ -82,12 +141,13 @@ Each result has:
 
 ## No Results Found
 
-If `godot-rag search` returns nothing:
+If `godot-rag s` returns nothing:
 
 1. **Try broader terms** — `"physics"` instead of `"3D rigid body collision detection"`
 2. **Try the class name alone** — `"Node"` instead of `"Node.get_children_filter"`
 3. **Try synonyms** — `"remove"` vs `"delete"` vs `"free"`
-4. **If still nothing:** Tell the user "I couldn't find this in the official docs" and proceed with a clear disclaimer. **Do not silently guess.**
+4. **Try different search types** — `s-class` vs `s-tutorial` vs `s-addon`
+5. **If still nothing:** Tell the user "I couldn't find this in the official docs" and proceed with a clear disclaimer. **Do not silently guess.**
 
 ## When to Query
 
@@ -100,6 +160,7 @@ If `godot-rag search` returns nothing:
 | Setting up scenes/nodes | Describing setup steps |
 | Configuring exports/properties | Recommending values |
 | User asks "how do I..." | Answering |
+| Working with addons | Any addon-related code |
 
 ## Red Flags — STOP and Query
 
@@ -107,10 +168,10 @@ If `godot-rag search` returns nothing:
 - "This is straightforward, no need to look it up"
 - "I've done this before, here's the code"
 - "The basic approach is..." (without citing docs)
-- Writing GDScript before any `godot-rag search` call in the conversation
+- Writing GDScript before any `godot-rag s` call in the conversation
 - Quoting API signatures from memory
 
-**All of these mean: Stop. Run `godot-rag search` first.**
+**All of these mean: Stop. Run `godot-rag s` first.**
 
 ## Common Rationalizations
 
@@ -118,7 +179,7 @@ If `godot-rag search` returns nothing:
 |--------|---------|
 | "I know this API well" | Godot 4.x changed many APIs. Your knowledge may be stale. |
 | "It's just a simple Timer" | Even Timer has version-specific behavior. Query it. |
-| "Querying slows me down" | `godot-rag search` takes <1 second. Wrong code takes hours to debug. |
+| "Querying slows me down" | `godot-rag s` takes <1 second. Wrong code takes hours to debug. |
 | "The user wants a fast answer" | A wrong fast answer is worse than a correct slightly-slower answer. |
 | "I'll query if I get stuck" | By then you've already written wrong code. Query first. |
 | "This is a concept, not code" | Concepts are documented too. Query them. |
@@ -129,24 +190,34 @@ If `godot-rag search` returns nothing:
 
 **Before writing a timer script:**
 ```bash
-godot-rag search "Timer" --limit 3
-godot-rag search "SceneTree.create_timer" --limit 3
+godot-rag s-class "Timer" --limit 3
+godot-rag s-class "SceneTree.create_timer" --limit 3
 ```
 
 **Before using CharacterBody3D:**
 ```bash
-godot-rag search "CharacterBody3D" --limit 5
-godot-rag search "CharacterBody3D.move_and_slide" --limit 3
+godot-rag s-class "CharacterBody3D" --limit 5
+godot-rag s-class "CharacterBody3D.move_and_slide" --limit 3
 ```
 
 **Before explaining signals:**
 ```bash
-godot-rag search "signal connection GDScript" --limit 5
+godot-rag s-tutorial "signal connection GDScript" --limit 5
 ```
 
 **Debugging an error — search the class involved:**
 ```bash
-godot-rag search "Area2D.body_entered" --json --limit 3
+godot-rag s-class "Area2D.body_entered" --json --limit 3
+```
+
+**Working with addons:**
+```bash
+# Check addon docs first
+godot-rag s-addon "state machine" --addon statecharts --json
+godot-rag s-addon "change_scene" --addon scene_manager --json
+
+# Then check API details
+godot-rag s-addon "SceneManager" --addon scene_manager --limit 3
 ```
 
 ## Installation
@@ -162,5 +233,22 @@ If your environment blocks system-wide pip:
 python3 -m venv ~/.venvs/godot-rag
 ~/.venvs/godot-rag/bin/pip install godot-rag
 ```
+
+## Database Coverage
+
+Tested on a database of **30,631 chunks** (28,235 Godot docs + 2,396 addon chunks across 9 addons).
+
+| Addon | Docs | Examples | API | Total |
+|---|---|---|---|---|
+| dialogue_manager | 140 | 2 | 55 | 197 |
+| doctor | 34 | 125 | 41 | 200 |
+| gdUnit4 | 1,030 | — | 214 | 1,244 |
+| input_helper | 32 | 3 | 6 | 41 |
+| limboai | 351 | 27 | — | 378 |
+| phantom-camera | 12 | 11 | 38 | 61 |
+| scene_manager | 47 | 2 | 5 | 54 |
+| sound_manager | 13 | 2 | 7 | 22 |
+| statecharts | 80 | 21 | 98 | 199 |
+| **Total** | **1,739** | **193** | **464** | **2,396** |
 
 **Note:** godot-rag docs track the **stable** Godot branch. If you're using an older Godot version, some APIs may differ.
