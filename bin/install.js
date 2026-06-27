@@ -11,12 +11,14 @@
  *   --skill <name>  Install specific skill (e.g., godot-rag)
  *   --target <name> Install to specific target (claude, codex, opencode, all)
  *   --list          List available skills
+ *   --interactive   Interactive mode (default when no args)
  *   --help          Show help
  */
 
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const readline = require('readline');
 
 // Available skills
 const SKILLS = {
@@ -174,6 +176,124 @@ function listSkills() {
   }
 }
 
+// Interactive prompt helpers
+function createReadline() {
+  return readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+}
+
+function prompt(question) {
+  const rl = createReadline();
+  return new Promise((resolve) => {
+    rl.question(question, (answer) => {
+      rl.close();
+      resolve(answer.trim());
+    });
+  });
+}
+
+function promptSelect(message, choices, multi = false) {
+  log(`\n${message}`, 'bright');
+  log('='.repeat(message.length), 'bright');
+
+  choices.forEach((choice, index) => {
+    const prefix = multi ? `[${choice.checked ? 'x' : ' '}]` : `${index + 1}.`;
+    const indicator = choice.detected ? ' (detected)' : '';
+    log(`  ${prefix} ${choice.name}${indicator}`);
+  });
+
+  if (multi) {
+    log('\n  Tips: Enter numbers separated by commas (e.g., 1,3), "a" for all, "i" to invert', 'dim');
+  }
+
+  return choices;
+}
+
+async function promptSelectSingle(message, choices) {
+  promptSelect(message, choices, false);
+
+  while (true) {
+    const answer = await prompt('\nSelect (number or name): ');
+
+    // Check if input is a number
+    const num = parseInt(answer);
+    if (!isNaN(num) && num >= 1 && num <= choices.length) {
+      return choices[num - 1].value;
+    }
+
+    // Check if input matches a choice name/value
+    const match = choices.find(c =>
+      c.value.toLowerCase() === answer.toLowerCase() ||
+      c.name.toLowerCase() === answer.toLowerCase()
+    );
+    if (match) {
+      return match.value;
+    }
+
+    log('Invalid selection. Please try again.', 'red');
+  }
+}
+
+async function promptSelectMultiple(message, choices) {
+  // Initialize checked state
+  let items = choices.map(c => ({ ...c, checked: c.checked || false }));
+
+  const displayItems = () => {
+    promptSelect(message, items, true);
+  };
+
+  displayItems();
+
+  while (true) {
+    const answer = await prompt('\nSelect (numbers, "a" all, "i" invert, "d" done): ');
+
+    if (answer.toLowerCase() === 'd' || answer === '') {
+      const selected = items.filter(i => i.checked);
+      if (selected.length === 0) {
+        log('Please select at least one option.', 'red');
+        continue;
+      }
+      return selected.map(i => i.value);
+    }
+
+    if (answer.toLowerCase() === 'a') {
+      const allChecked = items.every(i => i.checked);
+      items = items.map(i => ({ ...i, checked: !allChecked }));
+      displayItems();
+      continue;
+    }
+
+    if (answer.toLowerCase() === 'i') {
+      items = items.map(i => ({ ...i, checked: !i.checked }));
+      displayItems();
+      continue;
+    }
+
+    // Parse comma-separated numbers
+    const numbers = answer.split(',').map(s => s.trim());
+    let valid = true;
+
+    for (const numStr of numbers) {
+      const num = parseInt(numStr);
+      if (isNaN(num) || num < 1 || num > items.length) {
+        log(`Invalid number: ${numStr}`, 'red');
+        valid = false;
+        break;
+      }
+    }
+
+    if (valid) {
+      for (const numStr of numbers) {
+        const num = parseInt(numStr);
+        items[num - 1].checked = !items[num - 1].checked;
+      }
+      displayItems();
+    }
+  }
+}
+
 function showHelp() {
   log('\nMulti-Platform AI Skills Installer', 'bright');
   log('==================================\n');
@@ -184,6 +304,7 @@ function showHelp() {
   log('  --skill <name>     Install specific skill');
   log('  --target <name>    Install to specific target (claude, codex, opencode, all)');
   log('  --list             List available skills');
+  log('  --interactive      Interactive mode (default when no args)');
   log('  --help             Show this help\n');
   log('Targets:');
   log('  claude             Claude Code (default)');
@@ -191,11 +312,12 @@ function showHelp() {
   log('  opencode           OpenCode');
   log('  all                All supported platforms\n');
   log('Examples:');
-  log('  npx @jbts6/claude-skills --all');
-  log('  npx @jbts6/claude-skills --skill godot-rag');
+  log('  npx @jbts6/claude-skills                    # Interactive mode');
+  log('  npx @jbts6/claude-skills --all              # Install all to Claude Code');
+  log('  npx @jbts6/claude-skills --skill godot-rag  # Install specific skill');
   log('  npx @jbts6/claude-skills --skill godot-rag --target codex');
-  log('  npx @jbts6/claude-skills --all --target all');
-  log('  npx @jbts6/claude-skills --list');
+  log('  npx @jbts6/claude-skills --all --target all # Install all to all platforms');
+  log('  npx @jbts6/claude-skills --list             # List available skills');
   log('');
 }
 
@@ -217,10 +339,93 @@ function parseTargets(args) {
   return [target];
 }
 
+async function interactiveMode() {
+  const BANNER = `
+  ╔═══════════════════════════════════════════════════╗
+  ║     Multi-Platform AI Skills Installer            ║
+  ║     Claude Code • Codex • OpenCode                ║
+  ╚═══════════════════════════════════════════════════╝
+`;
+  log(BANNER, 'cyan');
+
+  // Step 1: Select skills
+  const skillChoices = Object.entries(SKILLS).map(([name, config]) => ({
+    name: `${name} - ${config.description}`,
+    value: name,
+    checked: false,
+    detected: false
+  }));
+
+  const selectedSkills = await promptSelectMultiple(
+    'Select skills to install:',
+    skillChoices
+  );
+
+  // Step 2: Select targets
+  const detectedPlatforms = detectInstalledPlatforms();
+  const targetChoices = Object.entries(TARGETS).map(([id, config]) => ({
+    name: config.name,
+    value: id,
+    checked: detectedPlatforms.has(id),
+    detected: detectedPlatforms.has(id)
+  }));
+
+  const selectedTargets = await promptSelectMultiple(
+    'Select target platforms:',
+    targetChoices
+  );
+
+  // Step 3: Confirm
+  log('\n📋 Installation Summary:', 'bright');
+  log('─'.repeat(40));
+  log('Skills:', 'cyan');
+  selectedSkills.forEach(s => log(`  • ${s}`));
+  log('\nTargets:', 'cyan');
+  selectedTargets.forEach(t => log(`  • ${TARGETS[t].name}`));
+  log('─'.repeat(40));
+
+  const confirm = await prompt('\nProceed with installation? (Y/n): ');
+  if (confirm.toLowerCase() === 'n') {
+    log('Installation cancelled.', 'yellow');
+    return;
+  }
+
+  // Step 4: Install
+  log('\n🚀 Installing...', 'bright');
+  for (const skillName of selectedSkills) {
+    const skillConfig = SKILLS[skillName];
+    installSkill(skillName, skillConfig, selectedTargets);
+  }
+
+  log('\n✨ Installation complete!', 'green');
+}
+
+function detectInstalledPlatforms() {
+  const detected = new Set();
+  const homeDir = require('os').homedir();
+
+  for (const [id, config] of Object.entries(TARGETS)) {
+    const dir = config.getDir();
+    if (fs.existsSync(dir)) {
+      detected.add(id);
+    }
+  }
+
+  return detected;
+}
+
 function main() {
   const args = process.argv.slice(2);
 
-  if (args.length === 0 || args.includes('--help')) {
+  // Default to interactive mode when no args
+  if (args.length === 0 || args.includes('--interactive')) {
+    interactiveMode().catch(err => {
+      error(`Interactive mode failed: ${err.message}`);
+    });
+    return;
+  }
+
+  if (args.includes('--help')) {
     showHelp();
     return;
   }

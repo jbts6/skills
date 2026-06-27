@@ -1,7 +1,7 @@
 {
   "name": "@jbts6/claude-skills",
-  "version": "1.0.0",
-  "description": "Custom Claude Code skills collection",
+  "version": "1.1.0",
+  "description": "Multi-platform AI skills installer for Claude Code, Codex, and OpenCode",
   "main": "index.js",
   "bin": {
     "claude-skills": "./bin/install.js"
@@ -12,10 +12,13 @@
   "keywords": [
     "claude",
     "claude-code",
+    "codex",
+    "opencode",
     "skills",
     "godot",
     "rag",
-    "ai"
+    "ai",
+    "installer"
   ],
   "author": "jbts6",
   "license": "MIT",
