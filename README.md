@@ -4,21 +4,14 @@
 
 ## 安装方法
 
-### 方法零：使用 npx（最简单）
+### 方法一：使用 npx（推荐）
 
 ```bash
-# 交互式安装（推荐，会引导你选择 skills 和平台）
+# 交互式安装（会引导你选择 skills 和平台）
 npx @jbts6/claude-skills
 
-# 安装所有 skills 到 Claude Code（默认）
-npx @jbts6/claude-skills --all
-
-# 安装特定 skill
+# 安装特定 skill 到 Claude Code
 npx @jbts6/claude-skills --skill godot-rag
-
-# 安装到特定平台
-npx @jbts6/claude-skills --skill godot-rag --target codex
-npx @jbts6/claude-skills --skill godot-rag --target opencode
 
 # 安装到所有平台
 npx @jbts6/claude-skills --all --target all
@@ -27,56 +20,38 @@ npx @jbts6/claude-skills --all --target all
 npx @jbts6/claude-skills --list
 ```
 
-**交互式模式**：
+**交互式模式特性**：
 - 自动检测已安装的平台
 - 支持多选 skills 和平台
 - 显示安装摘要和确认
 - 操作提示：数字选择，`a` 全选，`i` 反选，`d` 确认
 
-### 方法一：克隆整个仓库（推荐）
+### 方法二：手动下载安装
 
 ```bash
-# 克隆到本地
-git clone https://github.com/jbts6/skills.git ~/.claude/skills
+# 1. 克隆仓库到临时目录
+git clone https://github.com/jbts6/skills.git /tmp/jbts6-skills
 
-# 或者如果你已经有 ~/.claude/skills 目录，可以只克隆子目录
-cd ~/.claude
-git remote add skills https://github.com/jbts6/skills.git
-git fetch skills
-git checkout skills/main -- godot-rag grill-rounds
-```
-
-### 方法二：单独安装某个 skill
-
-```bash
-# 创建 skills 目录（如果不存在）
+# 2. 创建 skills 目录（如果不存在）
 mkdir -p ~/.claude/skills
 
-# 克隆仓库到临时目录
-git clone https://github.com/jbts6/skills.git /tmp/skills
+# 3. 复制你需要的 skill
+cp -r /tmp/jbts6-skills/godot-rag ~/.claude/skills/
+cp -r /tmp/jbts6-skills/grill-rounds ~/.claude/skills/
 
-# 复制你需要的 skill
-cp -r /tmp/skills/godot-rag ~/.claude/skills/
-
-# 清理临时文件
-rm -rf /tmp/skills
+# 4. 清理临时文件
+rm -rf /tmp/jbts6-skills
 ```
 
-### 方法三：使用 Git Sparse Checkout（高级）
-
+**其他平台**：
 ```bash
-# 创建目录并初始化
-mkdir -p ~/.claude/skills
-cd ~/.claude/skills
-git init
-git remote add origin https://github.com/jbts6/skills.git
+# Codex
+mkdir -p ~/.codex/skills
+cp -r /tmp/jbts6-skills/godot-rag ~/.codex/skills/
 
-# 启用 sparse checkout
-git sparse-checkout init
-git sparse-checkout set godot-rag  # 添加你需要的 skill
-
-# 拉取代码
-git pull origin main
+# OpenCode
+mkdir -p ~/.opencode/skills
+cp -r /tmp/jbts6-skills/godot-rag ~/.opencode/skills/
 ```
 
 ## 支持的平台
