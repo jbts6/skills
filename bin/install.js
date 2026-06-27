@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Claude Skills Installer
+ * Multi-Platform AI Skills Installer
  *
  * Usage:
  *   npx @jbts6/claude-skills [options]
@@ -9,6 +9,7 @@
  * Options:
  *   --all           Install all skills
  *   --skill <name>  Install specific skill (e.g., godot-rag)
+ *   --target <name> Install to specific target (claude, codex, opencode, all)
  *   --list          List available skills
  *   --help          Show help
  */
@@ -64,9 +65,31 @@ function warn(message) {
   log(`⚠️  ${message}`, 'yellow');
 }
 
-function getClaudeSkillsDir() {
-  const homeDir = require('os').homedir();
-  return path.join(homeDir, '.claude', 'skills');
+// Supported targets and their skill directories
+const TARGETS = {
+  claude: {
+    name: 'Claude Code',
+    getDir: () => path.join(require('os').homedir(), '.claude', 'skills'),
+    marker: 'SKILL.md'
+  },
+  codex: {
+    name: 'Codex',
+    getDir: () => path.join(require('os').homedir(), '.codex', 'skills'),
+    marker: 'SKILL.md'
+  },
+  opencode: {
+    name: 'OpenCode',
+    getDir: () => path.join(require('os').homedir(), '.opencode', 'skills'),
+    marker: 'SKILL.md'
+  }
+};
+
+function getSkillsDir(target = 'claude') {
+  const targetConfig = TARGETS[target];
+  if (!targetConfig) {
+    error(`Unknown target: ${target}. Available: ${Object.keys(TARGETS).join(', ')}`);
+  }
+  return targetConfig.getDir();
 }
 
 function ensureDirectoryExists(dir) {
@@ -93,28 +116,36 @@ function copyDirectory(src, dest) {
   }
 }
 
-function installSkill(skillName, skillConfig) {
-  const skillsDir = getClaudeSkillsDir();
+function installSkill(skillName, skillConfig, targets = ['claude']) {
   const srcDir = __dirname;
   const parentDir = path.dirname(srcDir);
 
   log(`\nInstalling ${skillName}...`, 'cyan');
 
-  for (const file of skillConfig.files) {
-    const srcPath = path.join(parentDir, file);
-    const destPath = path.join(skillsDir, file);
+  for (const target of targets) {
+    const skillsDir = getSkillsDir(target);
+    const targetName = TARGETS[target].name;
 
-    if (!fs.existsSync(srcPath)) {
-      warn(`Source not found: ${srcPath}`);
-      continue;
+    log(`  → ${targetName}: ${skillsDir}`, 'cyan');
+
+    for (const file of skillConfig.files) {
+      const srcPath = path.join(parentDir, file);
+      const destPath = path.join(skillsDir, file);
+
+      if (!fs.existsSync(srcPath)) {
+        warn(`  Source not found: ${srcPath}`);
+        continue;
+      }
+
+      if (fs.statSync(srcPath).isDirectory()) {
+        copyDirectory(srcPath, destPath);
+      } else {
+        ensureDirectoryExists(path.dirname(destPath));
+        fs.copyFileSync(srcPath, destPath);
+      }
     }
 
-    if (fs.statSync(srcPath).isDirectory()) {
-      copyDirectory(srcPath, destPath);
-    } else {
-      ensureDirectoryExists(path.dirname(destPath));
-      fs.copyFileSync(srcPath, destPath);
-    }
+    success(`  Installed ${skillName} to ${targetName}`);
   }
 
   // Check Python package if required
@@ -127,8 +158,6 @@ function installSkill(skillName, skillConfig) {
       info(`Install it with: pip install ${skillConfig.pythonPackage}`);
     }
   }
-
-  success(`Installed ${skillName} to ${skillsDir}`);
 }
 
 function listSkills() {
@@ -146,20 +175,46 @@ function listSkills() {
 }
 
 function showHelp() {
-  log('\nClaude Skills Installer', 'bright');
-  log('======================\n');
+  log('\nMulti-Platform AI Skills Installer', 'bright');
+  log('==================================\n');
   log('Usage:');
   log('  npx @jbts6/claude-skills [options]\n');
   log('Options:');
-  log('  --all           Install all skills');
-  log('  --skill <name>  Install specific skill');
-  log('  --list          List available skills');
-  log('  --help          Show this help\n');
+  log('  --all              Install all skills');
+  log('  --skill <name>     Install specific skill');
+  log('  --target <name>    Install to specific target (claude, codex, opencode, all)');
+  log('  --list             List available skills');
+  log('  --help             Show this help\n');
+  log('Targets:');
+  log('  claude             Claude Code (default)');
+  log('  codex              OpenAI Codex');
+  log('  opencode           OpenCode');
+  log('  all                All supported platforms\n');
   log('Examples:');
   log('  npx @jbts6/claude-skills --all');
   log('  npx @jbts6/claude-skills --skill godot-rag');
+  log('  npx @jbts6/claude-skills --skill godot-rag --target codex');
+  log('  npx @jbts6/claude-skills --all --target all');
   log('  npx @jbts6/claude-skills --list');
   log('');
+}
+
+function parseTargets(args) {
+  const targetIndex = args.indexOf('--target');
+  if (targetIndex === -1 || !args[targetIndex + 1]) {
+    return ['claude']; // Default to Claude Code
+  }
+
+  const target = args[targetIndex + 1];
+  if (target === 'all') {
+    return Object.keys(TARGETS);
+  }
+
+  if (!TARGETS[target]) {
+    error(`Unknown target: ${target}. Available: ${Object.keys(TARGETS).join(', ')}`);
+  }
+
+  return [target];
 }
 
 function main() {
@@ -175,10 +230,12 @@ function main() {
     return;
   }
 
+  const targets = parseTargets(args);
+
   if (args.includes('--all')) {
     log('\nInstalling all skills...', 'bright');
     for (const [name, config] of Object.entries(SKILLS)) {
-      installSkill(name, config);
+      installSkill(name, config, targets);
     }
     log('\n✨ All skills installed!', 'green');
     return;
@@ -193,7 +250,7 @@ function main() {
       error(`Unknown skill: ${skillName}`);
     }
 
-    installSkill(skillName, skillConfig);
+    installSkill(skillName, skillConfig, targets);
     return;
   }
 

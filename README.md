@@ -1,17 +1,24 @@
-# Claude Code Skills
+# Multi-Platform AI Skills
 
-自定义 Claude Code skills 集合。
+自定义 AI 编码助手 skills 集合，支持 Claude Code、Codex 和 OpenCode。
 
 ## 安装方法
 
 ### 方法零：使用 npx（最简单）
 
 ```bash
-# 安装所有 skills
+# 安装所有 skills 到 Claude Code（默认）
 npx @jbts6/claude-skills --all
 
 # 安装特定 skill
 npx @jbts6/claude-skills --skill godot-rag
+
+# 安装到特定平台
+npx @jbts6/claude-skills --skill godot-rag --target codex
+npx @jbts6/claude-skills --skill godot-rag --target opencode
+
+# 安装到所有平台
+npx @jbts6/claude-skills --all --target all
 
 # 查看可用 skills
 npx @jbts6/claude-skills --list
@@ -62,6 +69,14 @@ git sparse-checkout set godot-rag  # 添加你需要的 skill
 # 拉取代码
 git pull origin main
 ```
+
+## 支持的平台
+
+| 平台 | Skill 目录 | 说明 |
+|------|-----------|------|
+| Claude Code | `~/.claude/skills/` | Anthropic 的 AI 编码助手 |
+| Codex | `~/.codex/skills/` | OpenAI 的 AI 编码助手 |
+| OpenCode | `~/.opencode/skills/` | 开源 AI 编码助手 |
 
 ## 可用 Skills
 
