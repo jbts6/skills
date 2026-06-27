@@ -7,6 +7,9 @@
 ### 方法零：使用 npx（最简单）
 
 ```bash
+# 交互式安装（推荐，会引导你选择 skills 和平台）
+npx @jbts6/claude-skills
+
 # 安装所有 skills 到 Claude Code（默认）
 npx @jbts6/claude-skills --all
 
@@ -23,6 +26,12 @@ npx @jbts6/claude-skills --all --target all
 # 查看可用 skills
 npx @jbts6/claude-skills --list
 ```
+
+**交互式模式**：
+- 自动检测已安装的平台
+- 支持多选 skills 和平台
+- 显示安装摘要和确认
+- 操作提示：数字选择，`a` 全选，`i` 反选，`d` 确认
 
 ### 方法一：克隆整个仓库（推荐）
 
