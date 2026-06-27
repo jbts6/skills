@@ -1,0 +1,33 @@
+{
+  "name": "@jbts6/claude-skills",
+  "version": "1.0.0",
+  "description": "Custom Claude Code skills collection",
+  "main": "index.js",
+  "bin": {
+    "claude-skills": "./bin/install.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "skills",
+    "godot",
+    "rag",
+    "ai"
+  ],
+  "author": "jbts6",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jbts6/skills.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jbts6/skills/issues"
+  },
+  "homepage": "https://github.com/jbts6/skills#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

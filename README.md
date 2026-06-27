@@ -4,6 +4,19 @@
 
 ## 安装方法
 
+### 方法零：使用 npx（最简单）
+
+```bash
+# 安装所有 skills
+npx @jbts6/claude-skills --all
+
+# 安装特定 skill
+npx @jbts6/claude-skills --skill godot-rag
+
+# 查看可用 skills
+npx @jbts6/claude-skills --list
+```
+
 ### 方法一：克隆整个仓库（推荐）
 
 ```bash
