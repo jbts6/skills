@@ -26,7 +26,7 @@ const SKILLS = {
     pythonPackage: 'godot-rag'
   },
   'grill-rounds': {
-    description: 'Grill rounds skill',
+    description: 'Multi-round, multi-session GDD/design document grilling protocol',
     files: ['grill-rounds/'],
     requiresPython: false
   }

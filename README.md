@@ -103,7 +103,60 @@ godot-rag s-class "Timer" --json
 
 ### grill-rounds
 
-（请在此处添加 grill-rounds skill 的说明）
+**用途**：用于大型 GDD/设计文档的多轮、多会话审查（grill）。
+
+**功能**：
+- 跨会话的持久化审查协议
+- 基于 `GRILL_BACKLOG.md` 的状态追踪
+- 逐问审查节奏（一次一个子问题）
+- 接受后写入的提交流程
+- 每轮提交 + 哈希回填
+- 子问题投票解析（`1:X;2:Y` 格式）
+
+**适用场景**：
+- 大型游戏设计文档（GDD）
+- 架构决策记录（ADR）集合
+- 需要多会话才能完成的设计审查
+- 需要跨会话延续和审计追踪的项目
+
+**核心协议**：
+1. **打开** — 读取 `docs/GRILL_BACKLOG.md`，确认下一个候选项
+2. **逐问** — 一次问一个子问题，附带推荐和权衡
+3. **应用访谈语义** — 挑战术语表、模糊术语精确化、场景压力测试、代码交叉引用
+4. **解析答案** — `接受` / `修正` / `写` / `1:X;2:Y`
+5. **接受后写入** — 只在口头接受后才写入文档
+6. **关闭轮次** — 更新 BACKLOG、提交、回填哈希
+
+**依赖**：
+- Git 仓库
+- `CONTEXT.md`（术语表）
+- `docs/GRILL_BACKLOG.md`（审查待办）
+
+**文件结构**：
+```
+/
+├── CONTEXT.md                    # 术语表
+├── docs/
+│   ├── GRILL_BACKLOG.md          # 审查待办
+│   ├── design/                   # 玩家可见规则
+│   ├── tech/                     # 技术实现
+│   └── adr/                      # 架构决策记录
+└── src/
+```
+
+**使用示例**：
+```bash
+# 在 Claude Code 中使用
+/grill-rounds
+
+# 或在对话中说明
+"我有一个大型 GDD 需要多轮审查"
+```
+
+**详细文档**：
+- [ADR-FORMAT.md](grill-rounds/ADR-FORMAT.md) — ADR 格式规范
+- [CONTEXT-FORMAT.md](grill-rounds/CONTEXT-FORMAT.md) — CONTEXT.md 格式规范
+- [README.md](grill-rounds/README.md) — 完整说明
 
 ## 更新 Skills
 
