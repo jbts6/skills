@@ -2,7 +2,7 @@
 name: godot-rag
 description: Use when writing, debugging, or researching any Godot Engine code (GDScript, C#, shaders, scene setup). Must run before generating or discussing Godot implementation details.
 compatibility: Requires Python 3.9+ and godot-rag (pip install godot-rag). Docs cover Godot 4.x (stable).
-version: 4.7.0.post5+
+version: 4.7.0.post7+
 ---
 
 # godot-rag: Official Docs Before Code
@@ -42,6 +42,16 @@ python3 -m venv ~/.venvs/godot-rag
 **If still failing after install attempts:** Tell the user godot-rag is unavailable and proceed with caution — state explicitly that your answers may be version-inaccurate.
 
 ## How to Query
+
+### List Available Addons
+
+```bash
+# List all indexed addons with chunk counts
+godot-rag addons
+
+# JSON output (for AI agents)
+godot-rag addons --json
+```
 
 ### Search by Type (Recommended)
 
@@ -236,7 +246,9 @@ python3 -m venv ~/.venvs/godot-rag
 
 ## Database Coverage
 
-Tested on a database of **30,631 chunks** (28,235 Godot docs + 2,396 addon chunks across 9 addons).
+Tested on a database of **30,529 chunks** (28,231 Godot docs + 2,298 addon chunks across 9 addons).
+
+Use `godot-rag addons` to see current addon list with chunk counts.
 
 | Addon | Docs | Examples | API | Total |
 |---|---|---|---|---|
@@ -244,11 +256,11 @@ Tested on a database of **30,631 chunks** (28,235 Godot docs + 2,396 addon chunk
 | doctor | 34 | 125 | 41 | 200 |
 | gdUnit4 | 1,030 | — | 214 | 1,244 |
 | input_helper | 32 | 3 | 6 | 41 |
-| limboai | 351 | 27 | — | 378 |
+| limboai | 299 | 27 | — | 326 |
 | phantom-camera | 12 | 11 | 38 | 61 |
-| scene_manager | 47 | 2 | 5 | 54 |
+| scene_manager | 1 | 2 | 5 | 8 |
 | sound_manager | 13 | 2 | 7 | 22 |
 | statecharts | 80 | 21 | 98 | 199 |
-| **Total** | **1,739** | **193** | **464** | **2,396** |
+| **Total** | **1,641** | **193** | **464** | **2,298** |
 
 **Note:** godot-rag docs track the **stable** Godot branch. If you're using an older Godot version, some APIs may differ.
