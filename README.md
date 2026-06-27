@@ -87,6 +87,19 @@ git pull origin main
 | Codex | `~/.codex/skills/` | OpenAI 的 AI 编码助手 |
 | OpenCode | `~/.opencode/skills/` | 开源 AI 编码助手 |
 
+## 操作系统支持
+
+| 操作系统 | 状态 | 说明 |
+|---------|------|------|
+| macOS | ✅ | 完全支持 |
+| Linux | ✅ | 完全支持 |
+| Windows | ✅ | 完全支持（自动检测 Python 命令） |
+
+**Windows 注意事项**：
+- 自动使用 `python` 命令（而非 `python3`）
+- 路径自动处理（使用 `%USERPROFILE%`）
+- 支持 Windows Terminal 和 PowerShell
+
 ## 可用 Skills
 
 ### godot-rag

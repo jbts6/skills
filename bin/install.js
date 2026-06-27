@@ -17,8 +17,14 @@
 
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const { execSync } = require('child_process');
 const readline = require('readline');
+
+// Detect platform
+const isWindows = os.platform() === 'win32';
+const isMacOS = os.platform() === 'darwin';
+const isLinux = os.platform() === 'linux';
 
 // Available skills
 const SKILLS = {
@@ -35,19 +41,25 @@ const SKILLS = {
   }
 };
 
-// Colors for terminal output
+// Colors for terminal output (with Windows support)
+const supportsColor = !isWindows || process.env.TERM || process.env.FORCE_COLOR;
+
 const colors = {
-  reset: '\x1b[0m',
-  bright: '\x1b[1m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  red: '\x1b[31m',
-  cyan: '\x1b[36m'
+  reset: supportsColor ? '\x1b[0m' : '',
+  bright: supportsColor ? '\x1b[1m' : '',
+  green: supportsColor ? '\x1b[32m' : '',
+  yellow: supportsColor ? '\x1b[33m' : '',
+  blue: supportsColor ? '\x1b[34m' : '',
+  red: supportsColor ? '\x1b[31m' : '',
+  cyan: supportsColor ? '\x1b[36m' : ''
 };
 
 function log(message, color = 'reset') {
-  console.log(`${colors[color]}${message}${colors.reset}`);
+  if (supportsColor) {
+    console.log(`${colors[color]}${message}${colors.reset}`);
+  } else {
+    console.log(message);
+  }
 }
 
 function error(message) {
@@ -71,17 +83,29 @@ function warn(message) {
 const TARGETS = {
   claude: {
     name: 'Claude Code',
-    getDir: () => path.join(require('os').homedir(), '.claude', 'skills'),
+    getDir: () => {
+      // Windows: %USERPROFILE%\.claude\skills
+      // macOS/Linux: ~/.claude/skills
+      return path.join(os.homedir(), '.claude', 'skills');
+    },
     marker: 'SKILL.md'
   },
   codex: {
     name: 'Codex',
-    getDir: () => path.join(require('os').homedir(), '.codex', 'skills'),
+    getDir: () => {
+      // Windows: %USERPROFILE%\.codex\skills
+      // macOS/Linux: ~/.codex/skills
+      return path.join(os.homedir(), '.codex', 'skills');
+    },
     marker: 'SKILL.md'
   },
   opencode: {
     name: 'OpenCode',
-    getDir: () => path.join(require('os').homedir(), '.opencode', 'skills'),
+    getDir: () => {
+      // Windows: %USERPROFILE%\.opencode\skills
+      // macOS/Linux: ~/.opencode/skills
+      return path.join(os.homedir(), '.opencode', 'skills');
+    },
     marker: 'SKILL.md'
   }
 };
@@ -153,7 +177,9 @@ function installSkill(skillName, skillConfig, targets = ['claude']) {
   // Check Python package if required
   if (skillConfig.requiresPython) {
     try {
-      execSync(`python3 -c "import ${skillConfig.pythonPackage.replace('-', '_')}"`, { stdio: 'ignore' });
+      // Windows uses 'python', Unix uses 'python3'
+      const pythonCmd = isWindows ? 'python' : 'python3';
+      execSync(`${pythonCmd} -c "import ${skillConfig.pythonPackage.replace('-', '_')}"`, { stdio: 'ignore' });
       success(`Python package '${skillConfig.pythonPackage}' is installed`);
     } catch (e) {
       warn(`Python package '${skillConfig.pythonPackage}' not found`);
@@ -295,6 +321,8 @@ async function promptSelectMultiple(message, choices) {
 }
 
 function showHelp() {
+  const platformInfo = isWindows ? ' (Windows)' : isMacOS ? ' (macOS)' : ' (Linux)';
+
   log('\nMulti-Platform AI Skills Installer', 'bright');
   log('==================================\n');
   log('Usage:');
@@ -311,6 +339,9 @@ function showHelp() {
   log('  codex              OpenAI Codex');
   log('  opencode           OpenCode');
   log('  all                All supported platforms\n');
+  log('Platforms:');
+  log('  ✓ Windows, macOS, Linux supported');
+  log(`  ✓ Current platform: ${os.platform()}${platformInfo}\n`);
   log('Examples:');
   log('  npx @jbts6/claude-skills                    # Interactive mode');
   log('  npx @jbts6/claude-skills --all              # Install all to Claude Code');
@@ -402,7 +433,6 @@ async function interactiveMode() {
 
 function detectInstalledPlatforms() {
   const detected = new Set();
-  const homeDir = require('os').homedir();
 
   for (const [id, config] of Object.entries(TARGETS)) {
     const dir = config.getDir();
